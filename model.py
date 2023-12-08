@@ -1,6 +1,7 @@
 import torch
 import cv2
 import numpy as np
+import time
 
 # Leemos el modelo
 model = torch.hub.load('ultralytics/yolov5', 'custom',
@@ -12,8 +13,11 @@ cap = cv2.VideoCapture(0)
 # Inicializamos el contador
 contador_botellas = 0
 
-# Inicializamos un conjunto para llevar un registro de las botellas ya contadas
-botellas_contadas = set()
+# Inicializamos un diccionario para llevar un registro de las botellas detectadas y el tiempo de la última detección
+botellas_detectadas = {}
+
+# Definimos el tiempo de espera entre detecciones (en segundos)
+tiempo_espera = 8
 
 # Empezamos
 while True:
@@ -29,13 +33,13 @@ while True:
     for index, row in info.iterrows():
         botella_id = index  # Puedes usar otra información para identificar la botella si es necesario
 
-        # Verificamos si esta botella ya se ha contado
-        if botella_id not in botellas_contadas:
+        # Verificamos si esta botella ya se ha detectado y si ha pasado suficiente tiempo desde la última detección
+        if botella_id not in botellas_detectadas or time.time() - botellas_detectadas[botella_id] > tiempo_espera:
             # Incrementamos el contador
             contador_botellas += 1
 
-            # Agregamos esta botella al conjunto de botellas contadas
-            botellas_contadas.add(botella_id)
+            # Actualizamos el tiempo de la última detección para esta botella
+            botellas_detectadas[botella_id] = time.time()
 
     # Dibujamos el número de botellas detectadas en el frame
     cv2.putText(frame, f'Botellas: {contador_botellas}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
